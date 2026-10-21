@@ -1,15 +1,23 @@
 <?xml version="1.0"?>
+<!-- Modifications Copyright (c) 2026 Hung-Ching Huang (qlin1806@g.ecc.u-tokyo.ac.jp)
+     2026-10-21: Declare ROS 2 node dependencies and existing licenses. -->
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>sas_robot_driver_denso</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>DENSO b-CAP robot driver and ROS 2 node.</description>
   <maintainer email="murilomarinho@ieee.org">murilo</maintainer>
-  <license>TODO: License declaration</license>
+  <license>LGPL-3.0-or-later</license>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>sas_core</depend>
+  <depend>eigen</depend>
+  <depend>rclcpp</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>sas_common</depend>
+  <depend>sas_robot_driver</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

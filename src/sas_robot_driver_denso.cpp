@@ -22,6 +22,9 @@
 #
 # ################################################################*/
 
+// Modifications Copyright (c) 2026 Hung-Ching Huang (qlin1806@g.ecc.u-tokyo.ac.jp)
+// 2026-10-21: Keep read-only sessions free of motion and arm-control commands.
+
 #include "sas_robot_driver_denso/sas_robot_driver_denso.h"
 
 #include <sas_core/sas_clock.hpp>
@@ -134,6 +137,9 @@ DQ RobotDriverDenso::get_end_effector_pose_dq()
 
 void RobotDriverDenso::set_target_joint_positions(const VectorXd &desired_joint_positions_rad)
 {
+    if(configuration_.read_only)
+        return;
+
     const VectorXd desired_joint_positions_deg = rad2deg(desired_joint_positions_rad);
     std::vector<double> joint_positions_local_buffer(desired_joint_positions_deg.data(), desired_joint_positions_deg.data() + 6);
     if(!bcap_driver_->set_joint_positions(joint_positions_local_buffer))
@@ -199,6 +205,9 @@ VectorXd RobotDriverDenso::_dq_to_homogenous_vector(const DQ& pose) const
 
 bool RobotDriverDenso::set_end_effector_pose_dq(const DQ& pose)
 {
+    if(configuration_.read_only)
+        return false;
+
     VectorXd homogenousvector = _dq_to_homogenous_vector(pose);
 
     std::vector<double> end_effector_pose_local_buffer(homogenousvector.data(), homogenousvector.data() + 10);
@@ -208,6 +217,10 @@ bool RobotDriverDenso::set_end_effector_pose_dq(const DQ& pose)
 void RobotDriverDenso::connect()
 {
     _connect();
+
+    // Monitoring must also work near zero, including while the arm is stationary.
+    if(configuration_.read_only)
+        return;
 
     //We need to keep reading from the DENSO robot until we get
     //useful information
@@ -220,6 +233,9 @@ void RobotDriverDenso::connect()
 
 void RobotDriverDenso::deinitialize()
 {
+    if(configuration_.read_only)
+        return;
+
     //10 ms clock
     sas::Clock clock(0.01);
     clock.init();
@@ -233,6 +249,9 @@ void RobotDriverDenso::deinitialize()
 
 void RobotDriverDenso::initialize()
 {
+    if(configuration_.read_only)
+        return;
+
     //10 ms clock
     sas::Clock clock(0.01);
     clock.init();
@@ -274,10 +293,13 @@ void RobotDriverDenso::_connect()
         throw std::runtime_error("  FAILED TO GetRobot() IN FUNCTION Connect(). Error code = " + bcap_driver_->get_last_error_info());
     }
 
-    worked = bcap_driver_->take_arm();
-    if(!worked)
+    if(!configuration_.read_only)
     {
-        throw std::runtime_error("  FAILED TO TakeArm() IN FUNCTION Connect(). Error code = " + bcap_driver_->get_last_error_info());
+        worked = bcap_driver_->take_arm();
+        if(!worked)
+        {
+            throw std::runtime_error("  FAILED TO TakeArm() IN FUNCTION Connect(). Error code = " + bcap_driver_->get_last_error_info());
+        }
     }
 }
 
@@ -326,7 +348,8 @@ void RobotDriverDenso::_slave_mode_off() noexcept
 
 void RobotDriverDenso::disconnect()
 {
-    bcap_driver_->give_arm();
+    if(!configuration_.read_only)
+        bcap_driver_->give_arm();
     bcap_driver_->release_robot();
     bcap_driver_->controller_disconnect();
     bcap_driver_->service_stop();

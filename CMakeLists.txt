@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(sas_robot_driver_denso)
 
+# Modifications Copyright (c) 2026 Hung-Ching Huang (qlin1806@g.ecc.u-tokyo.ac.jp)
+# 2026-10-21: Build/install the ROS 2 node.
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -9,6 +12,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(sas_core REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rcl_interfaces REQUIRED)
+find_package(sas_common REQUIRED)
+find_package(sas_robot_driver REQUIRED)
 
 ##### CPP LIBRARY #####
 
@@ -27,10 +34,13 @@ add_library(${PROJECT_NAME} SHARED
     )
 
 ament_target_dependencies(${PROJECT_NAME} Eigen3 sas_core)
+target_link_libraries(${PROJECT_NAME} dqrobotics)
 
 target_include_directories(${PROJECT_NAME}
-    PRIVATE
+    PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/bcap>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/bcap/bCAPClient>
@@ -56,6 +66,13 @@ install(
     )
 
 ##END## CPP LIBRARY #####
+
+add_executable(sas_robot_driver_denso_node src/sas_robot_driver_denso_node.cpp)
+ament_target_dependencies(sas_robot_driver_denso_node rclcpp rcl_interfaces sas_common sas_core sas_robot_driver)
+target_link_libraries(sas_robot_driver_denso_node ${PROJECT_NAME})
+target_compile_features(sas_robot_driver_denso_node PRIVATE cxx_std_17)
+install(TARGETS sas_robot_driver_denso_node DESTINATION lib/${PROJECT_NAME})
+install(FILES LICENSE LICENSE.GPL-3.0 LICENSE.bcap DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)

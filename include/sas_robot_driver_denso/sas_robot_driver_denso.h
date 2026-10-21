@@ -23,6 +23,9 @@
 #
 # ################################################################*/
 
+// Modifications Copyright (c) 2026 Hung-Ching Huang (qlin1806@g.ecc.u-tokyo.ac.jp)
+// 2026-10-21: Add an opt-in read-only configuration for joint monitoring.
+
 #include <atomic>
 #include <vector>
 #include <memory>
@@ -44,6 +47,7 @@ struct RobotDriverDensoConfiguration
     std::string ip_address;
     int port;
     double speed;
+    bool read_only = false;
 };
 
 
